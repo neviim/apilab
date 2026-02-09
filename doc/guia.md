@@ -28,8 +28,10 @@ Na Fase 1, a unica tool disponivel e `ping`, que retorna `"pong"`.
 
 ```
 apilab/
+  dev.sh                 Script para modo desenvolvimento
+  prod.sh                Script para modo producao (acesso remoto)
   src/
-    main.rs              Ponto de entrada: Axum router, bind 127.0.0.1:3000
+    main.rs              Ponto de entrada: Axum router, bind configuravel
     lib.rs               AppState (SessionManager + ToolRegistry)
     protocol/
       error.rs           Codigos de erro JSON-RPC 2.0
@@ -47,6 +49,10 @@ apilab/
     transport/
       handler.rs         Handlers Axum: POST/GET/DELETE /mcp
       sse.rs             Helper para eventos SSE
+  doc/
+    guia.md              Documentacao completa
+    referencia-rapida.md Tabelas de consulta rapida
+    examples/            Scripts de exemplo executaveis
 ```
 
 ### Fluxo de uma requisicao
@@ -71,24 +77,70 @@ Cliente                          Servidor
 
 - Rust toolchain (rustc + cargo)
 
-### Compilar
+### Modo desenvolvimento
 
 ```bash
-cargo build
+./dev.sh
 ```
 
-### Executar
+- Build debug (compilacao rapida)
+- Logs em nivel `debug`
+- Bind em `127.0.0.1:3000` (somente local)
+
+### Modo producao
 
 ```bash
-cargo run
+./prod.sh
 ```
 
-O servidor inicia em `http://127.0.0.1:3000` com o endpoint unico `/mcp`.
+- Build release (otimizado)
+- Logs em nivel `info`
+- Bind em `0.0.0.0:3000` (acesso remoto habilitado)
 
-Para ver os logs estruturados:
+### Comparacao dos modos
+
+|                | `dev.sh`        | `prod.sh`          |
+|----------------|-----------------|--------------------|
+| Build          | debug           | release (otimizado)|
+| Bind           | `127.0.0.1`     | `0.0.0.0`          |
+| Logs           | debug           | info               |
+| Acesso remoto  | nao             | sim                |
+
+### Variaveis de ambiente
+
+O servidor aceita configuracao via variaveis de ambiente:
+
+| Variavel   | Default       | Descricao                    |
+|------------|---------------|------------------------------|
+| `MCP_HOST` | `127.0.0.1`   | Endereco de bind             |
+| `MCP_PORT` | `3000`        | Porta do servidor            |
+| `RUST_LOG` | (nenhum)       | Nivel de log (debug, info, warn, error) |
+
+Os scripts `dev.sh` e `prod.sh` configuram essas variaveis automaticamente,
+mas voce pode sobrescreve-las:
 
 ```bash
-RUST_LOG=info cargo run
+# Dev em porta customizada
+MCP_PORT=8080 ./dev.sh
+
+# Prod em porta customizada
+MCP_PORT=9000 ./prod.sh
+
+# Manual: acesso remoto com logs debug
+MCP_HOST=0.0.0.0 MCP_PORT=4000 RUST_LOG=debug cargo run
+```
+
+### Acesso remoto
+
+No modo producao (`prod.sh`), o servidor escuta em `0.0.0.0`, aceitando
+conexoes de qualquer interface de rede. Clientes remotos acessam usando o IP
+da maquina:
+
+```bash
+# Na maquina remota:
+curl -s -X POST http://<IP_DO_SERVIDOR>:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"remote-client"}}}'
 ```
 
 ## Endpoint: `/mcp`

@@ -3,15 +3,36 @@
 ## Compilar e Executar
 
 ```bash
-# Compilar
-cargo build
+# Desenvolvimento (debug, localhost, logs verbose)
+./dev.sh
 
-# Executar (127.0.0.1:3000)
-cargo run
+# Producao (release, 0.0.0.0, acesso remoto)
+./prod.sh
 
-# Executar com logs
-RUST_LOG=info cargo run
+# Porta customizada
+MCP_PORT=8080 ./dev.sh
+MCP_PORT=9000 ./prod.sh
+
+# Manual
+MCP_HOST=0.0.0.0 MCP_PORT=4000 RUST_LOG=debug cargo run
 ```
+
+## Modos
+
+|                | `dev.sh`        | `prod.sh`          |
+|----------------|-----------------|--------------------|
+| Build          | debug           | release (otimizado)|
+| Bind           | `127.0.0.1`     | `0.0.0.0`          |
+| Logs           | debug           | info               |
+| Acesso remoto  | nao             | sim                |
+
+## Variaveis de Ambiente
+
+| Variavel   | Default     | Descricao          |
+|------------|-------------|--------------------|
+| `MCP_HOST` | `127.0.0.1` | Endereco de bind   |
+| `MCP_PORT` | `3000`      | Porta              |
+| `RUST_LOG` | (nenhum)    | Nivel de log       |
 
 ## Ciclo de Vida MCP (ordem obrigatoria)
 
